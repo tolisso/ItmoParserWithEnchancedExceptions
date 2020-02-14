@@ -13,35 +13,25 @@ public class CheckedSubtract extends BinaryOperator {
     }
 
     @Override
-    public int evaluate(Map<String, Integer> values) {
-        // System.out.println("Subtract");
-        int first = firstOperand.evaluate(values);
-        int second = secondOperand.evaluate(values);
+    protected int doOperation(int first, int second) {
         int result = first - second;
         boolean overflowFlag = false;
-        if (second > 0) {
-            if (result > first) {
+        if (second > 0) { // f + s = max
+            if (first < Integer.MIN_VALUE + second) {
                 overflowFlag = true;
             }
         } else {
-            if (result < first) {
+            if (first > Integer.MAX_VALUE + second) {
                 overflowFlag = true;
             }
         }
 
         if (overflowFlag) {
-            StringBuilder trace = new StringBuilder();
-            trace.append("Overflow: ");
-            trace.append(first);
-            trace.append(" - ");
-            trace.append(second);
-            trace.append(" = ");
-            trace.append(result);
-            throw new OverflowException(trace.toString());
+            throw new OverflowException(first + "", operator, second + "");
         }
         return result;
-        // return firstOperand.evaluate(values) - secondOperand.evaluate(values);
     }
+
     @Override
     public double evaluate(double value) {
         return firstOperand.evaluate(value) - secondOperand.evaluate(value);

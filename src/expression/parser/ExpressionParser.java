@@ -35,8 +35,10 @@ public class ExpressionParser implements Parser {
         char current;
         int counter = 0;
         do {
+            // System.out.println(source.currentWord());
             Operator prev = ans;
             source.skipWhitespaces();
+            source.parseCurrentWord();
             current = source.current();
             // System.out.println(source.currentWord());
             // System.out.println(current + " " + priority);
@@ -121,14 +123,21 @@ public class ExpressionParser implements Parser {
                 }
             }
 
+            source.parseCurrentWord();
+            // System.out.println(source.currentWord());
             if (source.currentWord().equals("+") || source.currentWord().equals("-") ||
                     source.currentWord().equals("*") || source.currentWord().equals("/") ||
                     source.currentWord().equals("abs") || source.currentWord().equals("square") ||
-                    source.currentWord().equals("<<") || source.currentWord().equals(">>")) {
+                    source.currentWord().equals("<<") || source.currentWord().equals(">>") ||
+                    source.currentWord().equals("log2") || source.currentWord().equals("pow2") ||
+                    source.currentWord().equals("**") || source.currentWord().equals("//")) {
                 if (priority >= getWordPriority(source.currentWord()) && ans != null) {
                     return ans;
                 }
-                if (!source.currentWord().equals("-")) {
+                if (!source.currentWord().equals("-") &&
+                        !source.currentWord().equals("abs") &&
+                        !source.currentWord().equals("pow2") &&
+                        !source.currentWord().equals("log2")) {
                     if (ans == null) {
                         if (isOperator(lastParsed)) {
                             throw new MiddleOperandException(lastParsed, source.currentWord());
@@ -145,12 +154,32 @@ public class ExpressionParser implements Parser {
                 source.nextWord();
                 current = source.current();
 
-                if (lastParsed.equals("<<")) {
+                if (lastParsed.equals("**")) {
+                    Operator secondOperand = parseValue(getWordPriority("**"), null, false);
+                    checkSecondOperand(secondOperand);
+                    Operator result = new Pow(ans, secondOperand);
+                    if (priority < getWordPriority("**")) {
+                        ans = result;
+                    } else {
+                        return result;
+                    }
+                }
+                if (lastParsed.equals("//")) {
+                    Operator secondOperand = parseValue(getWordPriority("//"), null, false);
+                    checkSecondOperand(secondOperand);
+                    Operator result = new Log(ans, secondOperand);
+                    if (priority < getWordPriority("//")) {
+                        ans = result;
+                    } else {
+                        return result;
+                    }
+                }
 
-                    Operator secondOperand = parseValue(getPriority('<'), null, false);
+                if (lastParsed.equals("<<")) {
+                    Operator secondOperand = parseValue(getWordPriority("<<"), null, false);
                     checkSecondOperand(secondOperand);
                     Operator result = new ShiftLeft(ans, secondOperand);
-                    if (priority < getPriority('<')) {
+                    if (priority < getWordPriority("<<")) {
                         ans = result;
                     } else {
                         return result;
@@ -158,10 +187,10 @@ public class ExpressionParser implements Parser {
                 }
 
                 if (lastParsed.equals(">>")) {
-                    Operator secondOperand = parseValue(getPriority('>'), null, false);
+                    Operator secondOperand = parseValue(getWordPriority(">>"), null, false);
                     checkSecondOperand(secondOperand);
                     Operator result = new ShiftRight(ans, secondOperand);
-                    if (priority < getPriority('>')) {
+                    if (priority < getWordPriority(">>")) {
                         ans = result;
                     } else {
                         return result;
@@ -177,6 +206,32 @@ public class ExpressionParser implements Parser {
                         return new Abs(operand);
                     }
                 }
+                if (lastParsed.equals("log2")) {
+                    /*if (source.current() != '(' && source.current() != ' ') {
+                        throw new RuntimeException("No space between log2 and operand");
+                    }*/
+                    Operator operand = parseValue(10, null, false);
+                    checkOperand(operand);
+                    if (priority < 10) {
+                        ans = new Log2(operand); // 10 is UnaryOperator priority
+
+                    } else if (priority >= 10) {
+                        return new Log2(operand);
+                    }
+                }
+                if (lastParsed.equals("pow2")) {
+                    /*if (source.current() != '(' && source.current() != ' ') {
+                        throw new RuntimeException("No space between log2 and operand");
+                    }*/
+                    Operator operand = parseValue(10, null, false);
+                    checkOperand(operand);
+                    if (priority < 10) {
+                        ans = new Pow2(operand); // 10 is UnaryOperator priority
+
+                    } else if (priority >= 10) {
+                        return new Pow2(operand);
+                    }
+                }
                 if (lastParsed.equals("square")) {
                     Operator operand = parseValue(10, null, false);
                     checkOperand(operand);
@@ -188,13 +243,13 @@ public class ExpressionParser implements Parser {
                 }
                 if (lastParsed.equals("+")) {
 
-                    Operator secondOperand = parseValue(getPriority('+'), null, false);
+                    Operator secondOperand = parseValue(getWordPriority("+"), null, false);
                     if (secondOperand == null) {
                         throw new SecondOperandException(prevParsed, lastParsed, source.currentWord());
                     }
                     Operator result = new CheckedAdd(ans, secondOperand);
 
-                    if (priority < getPriority('+')) {
+                    if (priority < getWordPriority("+")) {
                         ans = result;
                     } else {
                         return result;
@@ -229,12 +284,12 @@ public class ExpressionParser implements Parser {
                         }
                     } else {
                         isLastBinaryOperator = true;
-                        Operator secondOperand = parseValue(getPriority('-'), null, false);
+                        Operator secondOperand = parseValue(getWordPriority("-"), null, false);
                         if (secondOperand == null) {
                             throw new SecondOperandException(prevParsed, lastParsed, source.currentWord());
                         }
                         Operator result = new CheckedSubtract(ans, secondOperand);
-                        if (priority < getPriority('-')) {
+                        if (priority < getWordPriority("-")) {
                             ans = result;
                         } else {
                             return result;
@@ -242,21 +297,21 @@ public class ExpressionParser implements Parser {
                     }
                 }
                 if (lastParsed.equals("*")) {
-                    Operator secondOperand = parseValue(getPriority('*'), null, false);
+                    Operator secondOperand = parseValue(getWordPriority("*"), null, false);
                     checkSecondOperand(secondOperand);
                     Operator result = new CheckedMultiply(ans, secondOperand);
 
-                    if (priority < getPriority('*')) {
+                    if (priority < getWordPriority("*")) {
                         ans = result;
                     } else {
                         return result;
                     }
                 }
                 if (lastParsed.equals("/")) {
-                    Operator secondOperand = parseValue(getPriority('/'), null, false);
+                    Operator secondOperand = parseValue(getWordPriority("/"), null, false);
                     checkSecondOperand(secondOperand);
                     Operator result = new CheckedDivide(ans, secondOperand);
-                    if (priority < getPriority('/')) {
+                    if (priority < getWordPriority("/")) {
                         ans = result;
                     } else {
                         return result;
@@ -272,36 +327,36 @@ public class ExpressionParser implements Parser {
         } while (true);
     }
 
-    private int getPriority(char ch) {
-        if (ch == '+') {
-            return new CheckedAdd(null, null).getPriority();
-        }
-        if (ch == '-') {
-            return new CheckedSubtract(null, null).getPriority();
-        }
-        if (ch == '*') {
-            return new CheckedMultiply(null, null).getPriority();
-        }
-        if (ch == '/') {
-            return new CheckedDivide(null, null).getPriority();
-        }
-        if (ch == '>') {
-            return new ShiftRight(null, null).getPriority();
-        }
-        if (ch == '<') {
-            return new ShiftLeft(null, null).getPriority();
-        }
-        if (ch == 'a') {
-            return 10;
-        }
-        if (ch == 's') {
-            return 10;
-        }
-        if (ch == ')') {
-            return 10;
-        }
-        return 0;
-    }
+//    private int getPriority(char ch) {
+//        if (ch == '+') {
+//            return new CheckedAdd(null, null).getPriority();
+//        }
+//        if (ch == '-') {
+//            return new CheckedSubtract(null, null).getPriority();
+//        }
+//        if (ch == '*') {
+//            return new CheckedMultiply(null, null).getPriority();
+//        }
+//        if (ch == '/') {
+//            return new CheckedDivide(null, null).getPriority();
+//        }
+//        if (ch == '>') {
+//            return new ShiftRight(null, null).getPriority();
+//        }
+//        if (ch == '<') {
+//            return new ShiftLeft(null, null).getPriority();
+//        }
+//        if (ch == 'a') {
+//            return 10;
+//        }
+//        if (ch == 's') {
+//            return 10;
+//        }
+//        if (ch == ')') {
+//            return 10;
+//        }
+//        return 0;
+//    }
     private int getWordPriority(String word) {
         if (word.equals("+")) {
             return new CheckedAdd(null, null).getPriority();
@@ -327,6 +382,12 @@ public class ExpressionParser implements Parser {
         if (word.equals("square")) {
             return 10;
         }
+        if (word.equals("//")) {
+            return 7;
+        }
+        if (word.equals("**")) {
+            return 7;
+        }
         if (word.equals(")")) {
             return 10;
         }
@@ -339,16 +400,17 @@ public class ExpressionParser implements Parser {
             sb.append(source.current());
             source.next();
         }
+        setLastParsed(sb + "");
         source.parseCurrentWord();
-        try {
+//        try {
             if (negate) {
                 return Integer.parseInt("-" + sb);
             } else {
                 return Integer.parseInt(sb.toString());
             }
-        } catch (NumberFormatException exc) {
-            throw new OverflowException("Tried to convert " + (negate ? "-" : "") +  sb + " into int");
-        }
+//        } catch (NumberFormatException exc) {
+//            throw new OverflowException("Tried to convert " + (negate ? "-" : "") +  sb + " into int");
+//        }
     }
 
     void setLastParsed(String parsed) {
@@ -376,6 +438,10 @@ public class ExpressionParser implements Parser {
             case "/":
             case ">>":
             case "<<":
+            case "pow2":
+            case "log2":
+            case "//":
+            case "**":
                 return true;
         }
         return false;

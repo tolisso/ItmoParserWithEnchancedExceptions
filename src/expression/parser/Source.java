@@ -1,9 +1,12 @@
 package expression.parser;
 
+import expression.exceptions.WrongSymbolException;
+
 public class Source {
     private String source;
     private int pos = 0;
     private String current;
+    private boolean wordParsed = false;
 
     public Source (String source) {
         source = source.replace("#", "<wrong_symbol>");
@@ -15,6 +18,7 @@ public class Source {
             pos++;
         }
         current = source.charAt(pos) + "";
+        wordParsed = false;
         return source.charAt(pos);
     }
     public String nextWord() {
@@ -24,6 +28,10 @@ public class Source {
     }
 
     public String parseCurrentWord() {
+        if (wordParsed) {
+            return current;
+        }
+        wordParsed = true;
         if (current() == '<') {
             check("<<");
             current = "<<";
@@ -32,7 +40,27 @@ public class Source {
             check(">>");
             current = ">>";
             return current;
-        } else if (current() == 'a') {
+        } else if (current() == 'l') {
+            check("log2");
+            if (Character.isDigit(source.charAt(pos + 1)) ||
+                    source.charAt(pos + 1) == 'x' ||
+                    source.charAt(pos + 1) == 'y' ||
+                    source.charAt(pos + 1) == 'z') {
+                throw new WrongSymbolException("log2", source.charAt(pos + 1) + "");
+            }
+            current = "log2";
+            return current;
+        } else if (current() == 'p') {
+            check("pow2");
+            if (Character.isDigit(source.charAt(pos + 1)) ||
+                    source.charAt(pos + 1) == 'x' ||
+                    source.charAt(pos + 1) == 'y' ||
+                    source.charAt(pos + 1) == 'z') {
+                throw new WrongSymbolException("pow2", source.charAt(pos + 1) + "");
+            }
+            current = "pow2";
+            return current;
+        }  else if (current() == 'a') {
             check("abs");
             current = "abs";
             return current;
@@ -49,12 +77,22 @@ public class Source {
             current = "-";
             return current;
         } else if (current() == '*') {
-            check("*");
-            current = "*";
+            if (source.charAt(pos + 1) == '*') {
+                check("**");
+                current = "**";
+            } else {
+                check("*");
+                current = "*";
+            }
             return current;
         } else if (current() == '/') {
-            check("/");
-            current = "/";
+            if (source.charAt(pos + 1) == '/') {
+                check("//");
+                current = "//";
+            } else {
+                check("/");
+                current = "/";
+            }
             return current;
         } else {
             current = current() + "";
@@ -89,6 +127,7 @@ public class Source {
                     next();
                 }
             }
+            wordParsed = true;
         }
 
 }

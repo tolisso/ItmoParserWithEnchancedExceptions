@@ -11,40 +11,36 @@ public class CheckedMultiply extends BinaryOperator {
         priority = 5;
     }
 
-    @Override
-    public int evaluate(Map<String, Integer> values) {
-        // System.out.println("Multiply");
-        int first = firstOperand.evaluate(values);
-        int second = secondOperand.evaluate(values);
-        int result = first * second;
-        boolean overflowFlag = false;
-        if (first != 1 && second != 0 && second == result) {
-            overflowFlag = true;
+    protected int doOperation(int first, int second) {
+        if (checkMultiply(first, second)) {
+            throw new OverflowException(first + "", operator, second + "");
         }
-        if (second != 1 && first != 0 && first == result) {
-            overflowFlag = true;
-        }
-
-        if (second != 0 && result / second != first) {
-            overflowFlag = true;
-        }
-
-        if (overflowFlag) {
-            StringBuilder trace = new StringBuilder();
-            trace.append("Overflow: ");
-            trace.append(first);
-            trace.append(" * ");
-            trace.append(second);
-            trace.append(" = ");
-            trace.append(result);
-            throw new OverflowException(trace.toString());
-        }
-
-        return result;
-        // return firstOperand.evaluate(values) * secondOperand.evaluate(values);
+        return first * second;
     }
+
     @Override
     public double evaluate(double value) {
         return firstOperand.evaluate(value) * secondOperand.evaluate(value);
+    }
+
+    static boolean checkMultiply(int first, int second) {
+        if (first == Integer.MIN_VALUE && second == -1) {
+            return true;
+        } else if (first == -1 && second == Integer.MIN_VALUE) {
+            return true;
+        } else {
+            if (second > 0) { // a * b < max   a < max / b
+                if (Integer.MAX_VALUE / second < first ||
+                        Integer.MIN_VALUE / second > first) {
+                    return true;
+                }
+            } else if (second < 0 && second != -1) {
+                if (Integer.MAX_VALUE / second > first ||
+                        Integer.MIN_VALUE / second < first) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

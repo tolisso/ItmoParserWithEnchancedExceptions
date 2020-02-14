@@ -10,14 +10,11 @@ public class CheckedNegate extends UnaryOperator {
         super(operator);
     }
 
-    @Override
-    public int evaluate(Map<String, Integer> values) {
-        int result = operand.evaluate(values);
-        if (result != 0 && result == -result) {
-            throw new OverflowException("Negating " + result);
+    protected int doOperation(int result) {
+        if (result == Integer.MIN_VALUE) {
+            throw new OverflowException("-", result + "");
         }
         return -result;
-        // return -operand.evaluate(values);
     }
 
     @Override

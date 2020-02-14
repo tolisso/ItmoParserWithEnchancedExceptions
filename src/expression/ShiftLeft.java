@@ -11,8 +11,8 @@ public class ShiftLeft extends BinaryOperator {
     }
 
     @Override
-    public int evaluate(Map<String, Integer> values) {
-        return firstOperand.evaluate(values) << secondOperand.evaluate(values);
+    protected int doOperation(int first, int second) {
+        return first << second;
     }
 
     @Override

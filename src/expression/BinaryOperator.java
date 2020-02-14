@@ -1,5 +1,7 @@
 package expression;
 
+import java.util.Map;
+
 public abstract class BinaryOperator extends Operator {
     public final Operator firstOperand;
     public final Operator secondOperand;
@@ -10,6 +12,15 @@ public abstract class BinaryOperator extends Operator {
         this.firstOperand = firstOperand;
         this.secondOperand = secondOperand;
     }
+
+    @Override
+    public final int evaluate(Map<String, Integer> values) {
+        int first = firstOperand.evaluate(values);
+        int second = secondOperand.evaluate(values);
+        return doOperation(first, second);
+    }
+
+    protected abstract int doOperation(int first, int second);
 
     public void toMiniString(StringBuilder sb) {
         if (firstOperand.getPriority() < priority) {

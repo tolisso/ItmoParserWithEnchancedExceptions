@@ -9,9 +9,8 @@ public class Square extends UnaryOperator {
     }
 
     @Override
-    public int evaluate(Map<String, Integer> values) {
-        int ans = operand.evaluate(values);
-        return ans * ans;
+    protected int doOperation(int val) {
+        return val * val;
     }
 
     @Override

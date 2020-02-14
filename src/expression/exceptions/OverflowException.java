@@ -1,7 +1,12 @@
 package expression.exceptions;
 
-public class OverflowException extends RuntimeException {
-    public OverflowException(String trace) {
-        super(trace);
+import java.beans.Expression;
+
+public class OverflowException extends ExpressionArithmeticException {
+    public OverflowException(String first, String operation, String second) {
+        super("Overflow in expression: " + first + operation + second);
+    }
+    public OverflowException(String operation, String operand) {
+        this("", operation, operand);
     }
 }

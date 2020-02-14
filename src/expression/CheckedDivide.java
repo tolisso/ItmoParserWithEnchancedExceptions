@@ -12,30 +12,17 @@ public class CheckedDivide extends BinaryOperator {
         isAss = false;
     }
 
-    @Override
-    public int evaluate(Map<String, Integer> values) {
-        // System.out.println("Divide");
-        int first = firstOperand.evaluate(values);
-        int second = secondOperand.evaluate(values);
-        int result = first / second;
+    protected int doOperation(int first, int second) {
         boolean overflowFlag = false;
-        if (second != 1 && first != 0 && first == result) {
+        if (first == Integer.MIN_VALUE && second == -1) {
             overflowFlag = true;
         }
 
         if (overflowFlag) {
-            StringBuilder trace = new StringBuilder();
-            trace.append("Overflow: ");
-            trace.append(first);
-            trace.append(" / ");
-            trace.append(second);
-            trace.append(" = ");
-            trace.append(result);
-            throw new OverflowException(trace.toString());
+            throw new OverflowException(first + "", operator, second + "");
         }
-
+        int result = first / second;
         return result;
-        // return firstOperand.evaluate(values) / secondOperand.evaluate(values);
     }
     public double evaluate(double value) {
         return firstOperand.evaluate(value) / secondOperand.evaluate(value);

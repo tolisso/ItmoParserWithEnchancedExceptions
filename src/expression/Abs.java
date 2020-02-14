@@ -8,8 +8,8 @@ public class Abs extends UnaryOperator {
     }
 
     @Override
-    public int evaluate(Map<String, Integer> values) {
-        return Math.abs(operand.evaluate(values));
+    protected int doOperation(int val) {
+        return Math.abs(val);
     }
 
     @Override

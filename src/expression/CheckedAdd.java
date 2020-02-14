@@ -11,36 +11,22 @@ public class CheckedAdd extends BinaryOperator {
         priority = 2;
     }
 
-    @Override
-    public int evaluate(Map<String, Integer> values) {
-        // System.out.println("Add");
-        int first = firstOperand.evaluate(values);
-        int second = secondOperand.evaluate(values);
-        int result = first + second;
+    protected int doOperation(int first, int second) {
         boolean overflowFlag = false;
-        if (second < 0) {
-            if (result > first) {
+        if (second < 0) { // f + s = max
+            if (first < Integer.MIN_VALUE - second) {
                 overflowFlag = true;
             }
         } else {
-            if (result < first) {
+            if (first > Integer.MAX_VALUE - second) {
                 overflowFlag = true;
             }
         }
 
         if (overflowFlag) {
-            StringBuilder trace = new StringBuilder();
-            trace.append("Overflow: ");
-            trace.append(first);
-            trace.append(" + ");
-            trace.append(second);
-            trace.append(" = ");
-            trace.append(result);
-            throw new OverflowException(trace.toString());
+            throw new OverflowException(first + "", operator, second + "");
         }
-
-        return result;
-        //return firstOperand.evaluate(values) + secondOperand.evaluate(values);
+        return first + second;
     }
     @Override
     public double evaluate(double x) {
