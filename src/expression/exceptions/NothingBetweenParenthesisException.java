@@ -1,7 +1,7 @@
 package expression.exceptions;
 
 public class NothingBetweenParenthesisException extends ParenthesisException {
-    public NothingBetweenParenthesisException() {
-        super("Nothing between '(' and ')'");
+    public NothingBetweenParenthesisException(int pos) {
+        super("Nothing between '(' and ')'" + " at position " + pos);
     }
 }

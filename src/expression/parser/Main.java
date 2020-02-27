@@ -1,8 +1,10 @@
 package expression.parser;
 
+import expression.exceptions.ParsingException;
+
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ParsingException {
         ExpressionParser parser = new ExpressionParser();
         System.out.println(parser.parse("16//2"));
         System.out.println(parser.parse("16//2").evaluate(0));

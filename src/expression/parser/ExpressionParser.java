@@ -12,7 +12,7 @@ public class ExpressionParser implements Parser {
     private String prevParsed = "begin";
     private boolean currentOperationParsed = false;
 
-    public Operator parse(String str) {
+    public Operator parse(String str) throws ParsingException {
 //        System.out.println(str);
         source = new Source(str);
         Operator ans = null;
@@ -20,7 +20,7 @@ public class ExpressionParser implements Parser {
         while (source.current() != '#') {
             ans = parseValue(0, ans, false);
             if (ans == prev) {
-                throw new CloseParenthesisException(lastParsed, source.currentWord());
+                throw new CloseParenthesisException(lastParsed, source.currentWord(), source.getPos());
             }
             prev = ans;
         }
@@ -31,7 +31,7 @@ public class ExpressionParser implements Parser {
         return ans;
     }
 
-    public Operator parseValue(final int priority, Operator ans, boolean negate) {
+    public Operator parseValue(final int priority, Operator ans, boolean negate) throws ParsingException {
         char current;
         int counter = 0;
         do {
@@ -65,10 +65,10 @@ public class ExpressionParser implements Parser {
                     // isLastBinaryOperator = false;
                 } while (source.current() != ')' && source.current() != '#');
                 if (source.current() == '#') {
-                    throw new NoCloseParenthesisException();
+                    throw new NoCloseParenthesisException(source.getPos());
                 }
                 if (oldAns == ans) {
-                    throw new NothingBetweenParenthesisException();
+                    throw new NothingBetweenParenthesisException(source.getPos());
                 }
                 setLastParsed(source.current());
                 source.nextWord();
@@ -107,7 +107,7 @@ public class ExpressionParser implements Parser {
                 source.parseCurrentWord();
                 current = source.current();
                 if (ans != null) {
-                    throw new WrongSymbolException(lastParsed, curInt + "");
+                    throw new WrongSymbolException(lastParsed, curInt + "", source.getPos());
                 }
                 setLastParsed(curInt + "");
                 if (getWordPriority(source.currentWord()) < priority) {
@@ -140,9 +140,9 @@ public class ExpressionParser implements Parser {
                         !source.currentWord().equals("log2")) {
                     if (ans == null) {
                         if (isOperator(lastParsed)) {
-                            throw new MiddleOperandException(lastParsed, source.currentWord());
+                            throw new MiddleOperandException(lastParsed, source.currentWord(), source.getPos());
                         } else {
-                            throw new FirstOperandException(lastParsed, source.currentWord());
+                            throw new FirstOperandException(lastParsed, source.currentWord(), source.getPos());
                         }
                     }
 //                    if (/* isLastBinaryOperator || */negate) {
@@ -245,7 +245,8 @@ public class ExpressionParser implements Parser {
 
                     Operator secondOperand = parseValue(getWordPriority("+"), null, false);
                     if (secondOperand == null) {
-                        throw new SecondOperandException(prevParsed, lastParsed, source.currentWord());
+                        throw new SecondOperandException(prevParsed, lastParsed,
+                                source.currentWord(), source.getPos());
                     }
                     Operator result = new CheckedAdd(ans, secondOperand);
 
@@ -259,7 +260,7 @@ public class ExpressionParser implements Parser {
                     if (ans == null || isLastBinaryOperator) {
                         Operator res = parseValue(10, null, true);
                         if (res == null) {
-                            throw new OperandException(lastParsed, source.currentWord());
+                            throw new OperandException(lastParsed, source.currentWord(), source.getPos());
                         }
                         if (priority < 10) {
                             ans = new CheckedNegate(res); // 10 is UnaryOperator priority
@@ -286,7 +287,8 @@ public class ExpressionParser implements Parser {
                         isLastBinaryOperator = true;
                         Operator secondOperand = parseValue(getWordPriority("-"), null, false);
                         if (secondOperand == null) {
-                            throw new SecondOperandException(prevParsed, lastParsed, source.currentWord());
+                            throw new SecondOperandException(prevParsed, lastParsed,
+                                    source.currentWord(), source.getPos());
                         }
                         Operator result = new CheckedSubtract(ans, secondOperand);
                         if (priority < getWordPriority("-")) {
@@ -322,7 +324,7 @@ public class ExpressionParser implements Parser {
                 if (source.current() == '#') {
                     return ans;
                 }
-                throw new WrongSymbolException(prevParsed, source.currentWord());
+                throw new WrongSymbolException(prevParsed, source.currentWord(), source.getPos());
             }
         } while (true);
     }
@@ -394,7 +396,7 @@ public class ExpressionParser implements Parser {
         return 0;
     }
 
-    private int parseInt(boolean negate) {
+    private int parseInt(boolean negate) throws ParsingException {
         StringBuilder sb = new StringBuilder(source.current());
         while ('0' <= source.current() && source.current() <= '9') {
             sb.append(source.current());
@@ -402,15 +404,15 @@ public class ExpressionParser implements Parser {
         }
         setLastParsed(sb + "");
         source.parseCurrentWord();
-//        try {
+        try {
             if (negate) {
                 return Integer.parseInt("-" + sb);
             } else {
                 return Integer.parseInt(sb.toString());
             }
-//        } catch (NumberFormatException exc) {
-//            throw new OverflowException("Tried to convert " + (negate ? "-" : "") +  sb + " into int");
-//        }
+        } catch (NumberFormatException exc) {
+            throw new BigDecimalException((negate ? "-" : "") + sb);
+        }
     }
 
     void setLastParsed(String parsed) {
@@ -420,14 +422,14 @@ public class ExpressionParser implements Parser {
     void setLastParsed(char parsed) {
         setLastParsed(parsed + "");
     }
-    void checkSecondOperand(Operator secondOperand) {
+    void checkSecondOperand(Operator secondOperand) throws ParsingException {
         if (secondOperand == null) {
-            throw new SecondOperandException(prevParsed, lastParsed, source.currentWord());
+            throw new SecondOperandException(prevParsed, lastParsed, source.currentWord(), source.getPos());
         }
     }
-    void checkOperand(Operator operand) {
+    void checkOperand(Operator operand) throws ParsingException{
         if (operand == null) {
-            throw new OperandException(lastParsed, source.currentWord());
+            throw new OperandException(lastParsed, source.currentWord(), source.getPos());
         }
     }
     boolean isOperator(String str) {

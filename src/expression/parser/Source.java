@@ -1,6 +1,8 @@
 package expression.parser;
 
+import expression.exceptions.ParsingException;
 import expression.exceptions.WrongSymbolException;
+import expression.exceptions.Replacer;
 
 public class Source {
     private String source;
@@ -21,13 +23,16 @@ public class Source {
         wordParsed = false;
         return source.charAt(pos);
     }
-    public String nextWord() {
+    public String nextWord() throws ParsingException {
         next();
         skipWhitespaces();
         return parseCurrentWord();
     }
+    public int getPos() {
+        return pos;
+    }
 
-    public String parseCurrentWord() {
+    public String parseCurrentWord() throws ParsingException {
         if (wordParsed) {
             return current;
         }
@@ -46,7 +51,7 @@ public class Source {
                     source.charAt(pos + 1) == 'x' ||
                     source.charAt(pos + 1) == 'y' ||
                     source.charAt(pos + 1) == 'z') {
-                throw new WrongSymbolException("log2", source.charAt(pos + 1) + "");
+                throw new WrongSymbolException("log2", source.charAt(pos + 1) + "", getPos());
             }
             current = "log2";
             return current;
@@ -56,7 +61,7 @@ public class Source {
                     source.charAt(pos + 1) == 'x' ||
                     source.charAt(pos + 1) == 'y' ||
                     source.charAt(pos + 1) == 'z') {
-                throw new WrongSymbolException("pow2", source.charAt(pos + 1) + "");
+                throw new WrongSymbolException("pow2", source.charAt(pos + 1) + "", getPos());
             }
             current = "pow2";
             return current;
@@ -116,12 +121,12 @@ public class Source {
         }
         while (Character.isWhitespace(next()));
     }
-        void check(String comp) {
+        void check(String comp) throws ParsingException {
             for (int i = 0; i < comp.length(); i++) {
                 StringBuilder ans = new StringBuilder();
                 ans.append(current());
                 if (comp.charAt(i) != current()) {
-                    throw new RuntimeException(comp + " expected, but " + ans + " has found");
+                    throw new ParsingException(comp + " expected, but " + Replacer.replace(ans + "") + " has found");
                 }
                 if (i != comp.length() - 1) {
                     next();

@@ -1,7 +1,7 @@
 package expression.exceptions;
 
 public class NoCloseParenthesisException extends ParenthesisException {
-    public NoCloseParenthesisException() {
-        super("No close parenthesis");
+    public NoCloseParenthesisException(int pos) {
+        super("No close parenthesis" + " at position " + pos);
     }
 }
