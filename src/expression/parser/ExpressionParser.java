@@ -43,14 +43,17 @@ public class ExpressionParser implements Parser {
             // System.out.println(source.currentWord());
             // System.out.println(current + " " + priority);
             // System.out.println(lastParsed + " " + current);
-            if (current == 'x' || current == 'y' || current == 'z') {
+            if (source.currentWord().equals("x") || source.currentWord().equals("y") ||
+                    source.currentWord().equals("z") || source.currentWord().equals("value")||
+                    source.currentWord().equals("abc")) {
                 isLastBinaryOperator = false;
-                setLastParsed(current);
+                setLastParsed(source.currentWord());
+                String variable = source.currentWord();
                 source.nextWord();
                 if (priority == 10) {
-                    return new Variable(current + "");
+                    return new Variable(variable);
                 } else {
-                    ans = new Variable(current + "");
+                    ans = new Variable(variable);
                 }
                 continue;
             }

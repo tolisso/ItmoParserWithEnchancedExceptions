@@ -12,7 +12,7 @@ public class Source {
 
     public Source (String source) {
         source = source.replace("#", "<wrong_symbol>");
-        this.source = source + "#"; // '#' end symbol
+        this.source = source + "##"; // '#' end symbol
         current = source.charAt(0) + "";
     }
     public char next() {
@@ -66,8 +66,17 @@ public class Source {
             current = "pow2";
             return current;
         }  else if (current() == 'a') {
-            check("abs");
-            current = "abs";
+            if (isWord("abc")) {
+                check("abc");
+                current = "abc";
+            } else {
+                check("abs");
+                current = "abs";
+            }
+            return current;
+        }  else if (current() == 'v') {
+            check("value");
+            current = "value";
             return current;
         } else if (current() == 's') {
             check("square");
@@ -121,18 +130,27 @@ public class Source {
         }
         while (Character.isWhitespace(next()));
     }
-        void check(String comp) throws ParsingException {
-            for (int i = 0; i < comp.length(); i++) {
-                StringBuilder ans = new StringBuilder();
-                ans.append(current());
-                if (comp.charAt(i) != current()) {
-                    throw new ParsingException(comp + " expected, but " + Replacer.replace(ans + "") + " has found");
-                }
-                if (i != comp.length() - 1) {
-                    next();
-                }
+    void check(String comp) throws ParsingException {
+        for (int i = 0; i < comp.length(); i++) {
+            StringBuilder ans = new StringBuilder();
+            ans.append(current());
+            if (comp.charAt(i) != current()) {
+                throw new ParsingException(comp + " expected, but " + Replacer.replace(ans + "") + " has found");
             }
-            wordParsed = true;
+            if (i != comp.length() - 1) {
+                next();
+            }
         }
+        wordParsed = true;
+    }
+
+    boolean isWord(String word) {
+        for (int i = 0; i < word.length(); i++) {
+            if (word.charAt(i) != source.charAt(pos + i)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 }
