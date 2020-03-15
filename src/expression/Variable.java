@@ -1,24 +1,23 @@
 package expression;
 
+import expression.generic.Operation;
+
 import java.util.Map;
 
-public class Variable extends Operator {
+public class Variable<T> extends Operator<T> {
     public final String var;
 
-    public Variable(String var) {
+    public Variable(String var, Operation<T> operation) {
         this.var = var;
+        this.operation = operation;
     }
 
     @Override
-    public int evaluate(Map<String, Integer> values) {
+    public T evaluate(Map<String, T> values) {
         if (!values.containsKey(var)) {
             throw new IllegalArgumentException("You didn't initialized variable \"" + var + "\"");
         }
         return values.get(var);
-    }
-
-    public double evaluate(double x) {
-        return x;
     }
 
     @Override

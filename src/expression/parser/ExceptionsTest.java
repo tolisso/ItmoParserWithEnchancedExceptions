@@ -2,6 +2,7 @@ package expression.parser;
 
 import expression.TripleExpression;
 import expression.*;
+import expression.generic.IntegerOperation;
 import expression.parser.Either;
 import expression.parser.ParserTest;
 
@@ -18,8 +19,8 @@ public class ExceptionsTest extends ParserTest {
     private final static List<Integer> OVERFLOW_VALUES = new ArrayList<>();
     private final char[] CHARS = "AZ+-*%()[]<>".toCharArray();
 
-    public static final Variable VX = new Variable("x");
-    public static final Variable VY = new Variable("y");
+    public static final Variable<Integer> VX = new Variable<>("x", new IntegerOperation());
+    public static final Variable<Integer> VY = new Variable<>("y", new IntegerOperation());
     public static final Reason OVERFLOW = new Reason("Overflow");
 
     static {
@@ -70,7 +71,7 @@ public class ExceptionsTest extends ParserTest {
     private void testParsingErrors() {
         for (final Op<String> op : parsingTest) {
             try {
-                new ExpressionParser().parse(op.f);
+                new ExpressionParser<>(new IntegerOperation()).parse(op.f);
                 assert false : "Successfully parsed " + op.f;
             } catch (final Exception e) {
                 System.out.format("%-30s %s%n", op.name, e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -80,11 +81,11 @@ public class ExceptionsTest extends ParserTest {
 
     protected static void testOverflow() {
         //noinspection Convert2MethodRef
-        testOverflow((a, b) -> a + b, "+", new CheckedAdd(VX, VY));
-        testOverflow((a, b) -> a - b, "-", new CheckedSubtract(VX, VY));
-        testOverflow((a, b) -> a * b, "*", new CheckedMultiply(VX, VY));
-        testOverflow((a, b) -> b == 0 ? Long.MAX_VALUE : a / b, "/", new CheckedDivide(VX, VY));
-        testOverflow((a, b) -> -b, "<- ignore first argument, unary -", new CheckedNegate(VY));
+        testOverflow((a, b) -> a + b, "+", new CheckedAdd<Integer>(VX, VY, new IntegerOperation()));
+        testOverflow((a, b) -> a - b, "-", new CheckedSubtract<>(VX, VY, new IntegerOperation()));
+        testOverflow((a, b) -> a * b, "*", new CheckedMultiply<>(VX, VY, new IntegerOperation()));
+        testOverflow((a, b) -> b == 0 ? Long.MAX_VALUE : a / b, "/", new CheckedDivide<>(VX, VY, new IntegerOperation()));
+        testOverflow((a, b) -> -b, "<- ignore first argument, unary -", new CheckedNegate<>(VY, new IntegerOperation()));
     }
 
     protected static void testOverflow(final LongBinaryOperator f, final String op, final TripleExpression expression) {
@@ -92,7 +93,7 @@ public class ExceptionsTest extends ParserTest {
             for (final int b : OVERFLOW_VALUES) {
                 final long expected = f.applyAsLong(a, b);
                 try {
-                    final int actual = expression.evaluate(a, b, 0);
+                    final int actual = (int)expression.evaluate(a, b, 0);
                     assert actual == expected : a + " " + op + " " + b + " == " + actual;
                 } catch (final Exception e) {
                     if (Integer.MIN_VALUE <= expected && expected <= Integer.MAX_VALUE) {
@@ -111,7 +112,7 @@ public class ExceptionsTest extends ParserTest {
     }
 
     protected TripleExpression parse(final String expression, final boolean reparse) {
-        final Parser parser = new ExpressionParser();
+        final Parser<Integer> parser = new ExpressionParser<>(new IntegerOperation());
         if (expression.length() > 10) {
             loop: for (final char ch : CHARS) {
                 for (int i = 0; i < 10; i++) {

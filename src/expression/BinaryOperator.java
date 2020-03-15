@@ -1,26 +1,29 @@
 package expression;
 
+import expression.generic.Operation;
+
 import java.util.Map;
 
-public abstract class BinaryOperator extends Operator {
-    public final Operator firstOperand;
-    public final Operator secondOperand;
+public abstract class BinaryOperator<T> extends Operator<T> {
+    public final Operator<T> firstOperand;
+    public final Operator<T> secondOperand;
     protected String operator = "<none>";
     protected int priority = -1;
     protected boolean isAss = true;
-    public BinaryOperator(Operator firstOperand, Operator secondOperand) {
+    public BinaryOperator(Operator<T> firstOperand, Operator<T> secondOperand, Operation<T> operation) {
+        this.operation = operation;
         this.firstOperand = firstOperand;
         this.secondOperand = secondOperand;
     }
 
     @Override
-    public final int evaluate(Map<String, Integer> values) {
-        int first = firstOperand.evaluate(values);
-        int second = secondOperand.evaluate(values);
+    public final T evaluate(Map<String, T> values) {
+        T first = firstOperand.evaluate(values);
+        T second = secondOperand.evaluate(values);
         return doOperation(first, second);
     }
 
-    protected abstract int doOperation(int first, int second);
+    protected abstract T doOperation(T first, T second);
 
     public void toMiniString(StringBuilder sb) {
         if (firstOperand.getPriority() < priority) {

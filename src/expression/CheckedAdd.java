@@ -1,35 +1,17 @@
 package expression;
 
-import java.util.Map;
-import expression.exceptions.OverflowException;
+import expression.generic.Operation;
 
-public class CheckedAdd extends BinaryOperator {
+public class CheckedAdd<T> extends BinaryOperator<T> {
 
-    public CheckedAdd(Operator a, Operator b) {
-        super(a, b);
+    public CheckedAdd(Operator<T> a, Operator<T> b, Operation<T> operation) {
+        super(a, b, operation);
         operator = " + ";
         priority = 2;
     }
 
-    protected int doOperation(int first, int second) {
-        boolean overflowFlag = false;
-        if (second < 0) { // f + s = max
-            if (first < Integer.MIN_VALUE - second) {
-                overflowFlag = true;
-            }
-        } else {
-            if (first > Integer.MAX_VALUE - second) {
-                overflowFlag = true;
-            }
-        }
-
-        if (overflowFlag) {
-            throw new OverflowException(first + "", operator, second + "");
-        }
-        return first + second;
-    }
     @Override
-    public double evaluate(double x) {
-        return firstOperand.evaluate(x) + secondOperand.evaluate(x);
+    protected T doOperation(T first, T second) {
+        return operation.add(first, second);
     }
 }

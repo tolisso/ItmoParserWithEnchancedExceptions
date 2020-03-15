@@ -1,21 +1,19 @@
 package expression;
 
+import expression.generic.Operation;
+
 import java.util.Map;
 
-public class Const extends Operator {
-    public Integer value;
-    public Double doubleValue;
+public class Const<T> extends Operator<T> {
+    public T value;
     private boolean negate;
-    public Const(Integer val) {
+    public Const(T val, Operation<T> operation) {
+        this.operation = operation;
         value = val;
-        doubleValue = (double)val;
     }
-    public Const(Integer val, boolean negate) {
-        this(val);
+    public Const(T val, Operation<T> operation, boolean negate) {
+        this(val, operation);
         this.negate = negate;
-    }
-    public Const(Double val) {
-        doubleValue = val;
     }
 
     public boolean isNegated() {
@@ -26,21 +24,13 @@ public class Const extends Operator {
     }
 
     @Override
-    public int evaluate(Map<String, Integer> values) {
-        return value.intValue();
-    }
-
-    @Override
-    public double evaluate(double x) {
-        return doubleValue;
+    public T evaluate(Map<String, T> values) {
+        return value;
     }
 
     @Override
     public String toString() {
-        if (value != null) {
-            return value + "";
-        }
-        return doubleValue + "";
+        return value + "";
     }
 
     @Override
@@ -50,11 +40,7 @@ public class Const extends Operator {
 
     @Override
     public void toString(StringBuilder sb) {
-        if (value != null) {
-            sb.append(value);
-        } else {
-            sb.append(doubleValue.toString());
-        }
+        sb.append(value);
     }
 
     @Override
@@ -69,14 +55,12 @@ public class Const extends Operator {
 
     public boolean equals(Object obj) {
         if (obj instanceof Const) {
-            Const sec = (Const)obj;
-            if (value != null && sec.value != null) {
-                return value.equals(sec.value);
-            }
-            if (value == null && sec.value == null) {
-                return doubleValue.equals(sec.doubleValue);
-            }
+            return value.equals(((Const)obj).value);
         }
         return false;
+    }
+
+    public Const negated() {
+        return new Const<T>(operation.negate(value), operation);
     }
 }

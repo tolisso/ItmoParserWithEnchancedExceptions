@@ -2,9 +2,11 @@ package expression.parser;
 
 import expression.*;
 import expression.exceptions.*;
+import expression.generic.Operation;
 
-public class ExpressionParser implements Parser {
+public class ExpressionParser<T> implements Parser<T> {
     private Source source;
+    private Operation<T> operation;
     //Expression exc;
     private int depth = 0;
     private boolean isLastBinaryOperator = false;
@@ -12,7 +14,12 @@ public class ExpressionParser implements Parser {
     private String prevParsed = "begin";
     private boolean currentOperationParsed = false;
 
+    public ExpressionParser(Operation<T> operation) {
+        this.operation = operation;
+    }
+
     public Operator parse(String str) throws ParsingException {
+        defaultCondition();
 //        System.out.println(str);
         source = new Source(str);
         Operator ans = null;
@@ -44,16 +51,15 @@ public class ExpressionParser implements Parser {
             // System.out.println(current + " " + priority);
             // System.out.println(lastParsed + " " + current);
             if (source.currentWord().equals("x") || source.currentWord().equals("y") ||
-                    source.currentWord().equals("z") || source.currentWord().equals("value")||
-                    source.currentWord().equals("abc")) {
+                    source.currentWord().equals("z")) {
                 isLastBinaryOperator = false;
                 setLastParsed(source.currentWord());
                 String variable = source.currentWord();
                 source.nextWord();
                 if (priority == 10) {
-                    return new Variable(variable);
+                    return new Variable<T>(variable, operation);
                 } else {
-                    ans = new Variable(variable);
+                    ans = new Variable<T>(variable, operation);
                 }
                 continue;
             }
@@ -115,14 +121,14 @@ public class ExpressionParser implements Parser {
                 setLastParsed(curInt + "");
                 if (getWordPriority(source.currentWord()) < priority) {
                     if (negate) {
-                        return new Const(Integer.valueOf(curInt), true);
+                        return new Const<T>(operation.wrap(curInt), operation, true);
                     }
-                    return new Const(curInt);
+                    return new Const<T>(operation.wrap(curInt), operation);
                 } else {
                     if (negate) {
-                        return parseValue(priority, new Const(Integer.valueOf(curInt), true), false);
+                        return parseValue(priority, new Const<T>(operation.wrap(curInt), operation, true), false);
                     }
-                    return parseValue(priority, new Const(curInt), false);
+                    return parseValue(priority, new Const<T>(operation.wrap(curInt), operation), false);
                 }
             }
 
@@ -130,17 +136,19 @@ public class ExpressionParser implements Parser {
             // System.out.println(source.currentWord());
             if (source.currentWord().equals("+") || source.currentWord().equals("-") ||
                     source.currentWord().equals("*") || source.currentWord().equals("/") ||
+                    source.currentWord().equals("min") || source.currentWord().equals("max")  ||
+                    source.currentWord().equals("count") /*||
                     source.currentWord().equals("abs") || source.currentWord().equals("square") ||
                     source.currentWord().equals("<<") || source.currentWord().equals(">>") ||
                     source.currentWord().equals("log2") || source.currentWord().equals("pow2") ||
-                    source.currentWord().equals("**") || source.currentWord().equals("//")) {
+                    source.currentWord().equals("**") || source.currentWord().equals("//") */) {
                 if (priority >= getWordPriority(source.currentWord()) && ans != null) {
                     return ans;
                 }
-                if (!source.currentWord().equals("-") &&
+                if (!source.currentWord().equals("-") && !source.currentWord().equals("count")/* &&
                         !source.currentWord().equals("abs") &&
                         !source.currentWord().equals("pow2") &&
-                        !source.currentWord().equals("log2")) {
+                        !source.currentWord().equals("log2")*/) {
                     if (ans == null) {
                         if (isOperator(lastParsed)) {
                             throw new MiddleOperandException(lastParsed, source.currentWord(), source.getPos());
@@ -148,110 +156,144 @@ public class ExpressionParser implements Parser {
                             throw new FirstOperandException(lastParsed, source.currentWord(), source.getPos());
                         }
                     }
-//                    if (/* isLastBinaryOperator || */negate) {
-//                        throw new RuntimeException("wrong symbol " + source.currentWord());
-//                    }
                     isLastBinaryOperator = true;
                 }
                 setLastParsed(source.currentWord());
                 source.nextWord();
                 current = source.current();
 
-                if (lastParsed.equals("**")) {
-                    Operator secondOperand = parseValue(getWordPriority("**"), null, false);
-                    checkSecondOperand(secondOperand);
-                    Operator result = new Pow(ans, secondOperand);
-                    if (priority < getWordPriority("**")) {
+//                if (lastParsed.equals("**")) {
+//                    Operator secondOperand = parseValue(getWordPriority("**"), null, false);
+//                    checkSecondOperand(secondOperand);
+//                    Operator result = new Pow(ans, secondOperand);
+//                    if (priority < getWordPriority("**")) {
+//                        ans = result;
+//                    } else {
+//                        return result;
+//                    }
+//                }
+//                if (lastParsed.equals("//")) {
+//                    Operator secondOperand = parseValue(getWordPriority("//"), null, false);
+//                    checkSecondOperand(secondOperand);
+//                    Operator result = new Log(ans, secondOperand);
+//                    if (priority < getWordPriority("//")) {
+//                        ans = result;
+//                    } else {
+//                        return result;
+//                    }
+//                }
+//
+//                if (lastParsed.equals("<<")) {
+//                    Operator secondOperand = parseValue(getWordPriority("<<"), null, false);
+//                    checkSecondOperand(secondOperand);
+//                    Operator result = new ShiftLeft(ans, secondOperand);
+//                    if (priority < getWordPriority("<<")) {
+//                        ans = result;
+//                    } else {
+//                        return result;
+//                    }
+//                }
+//
+//                if (lastParsed.equals(">>")) {
+//                    Operator secondOperand = parseValue(getWordPriority(">>"), null, false);
+//                    checkSecondOperand(secondOperand);
+//                    Operator result = new ShiftRight(ans, secondOperand);
+//                    if (priority < getWordPriority(">>")) {
+//                        ans = result;
+//                    } else {
+//                        return result;
+//                    }
+//                }
+//                if (lastParsed.equals("abs")) {
+//                    Operator operand = parseValue(10, null, false);
+//                    checkOperand(operand);
+//                    if (priority < 10) {
+//                        ans = new Abs(operand); // 10 is UnaryOperator priority
+//
+//                    } else if (priority >= 10) {
+//                        return new Abs(operand);
+//                    }
+//                }
+//                if (lastParsed.equals("log2")) {
+//                    /*if (source.current() != '(' && source.current() != ' ') {
+//                        throw new RuntimeException("No space between log2 and operand");
+//                    }*/
+//                    Operator operand = parseValue(10, null, false);
+//                    checkOperand(operand);
+//                    if (priority < 10) {
+//                        ans = new Log2(operand); // 10 is UnaryOperator priority
+//
+//                    } else if (priority >= 10) {
+//                        return new Log2(operand);
+//                    }
+//                }
+//                if (lastParsed.equals("pow2")) {
+//                    /*if (source.current() != '(' && source.current() != ' ') {
+//                        throw new RuntimeException("No space between log2 and operand");
+//                    }*/
+//                    Operator operand = parseValue(10, null, false);
+//                    checkOperand(operand);
+//                    if (priority < 10) {
+//                        ans = new Pow2(operand); // 10 is UnaryOperator priority
+//
+//                    } else if (priority >= 10) {
+//                        return new Pow2(operand);
+//                    }
+//                }
+//                if (lastParsed.equals("square")) {
+//                    Operator operand = parseValue(10, null, false);
+//                    checkOperand(operand);
+//                    if (priority < 10) {
+//                        ans = new Square(operand);
+//                    } else if (priority >= 10) {
+//                        return new Square(operand);
+//                    }
+//                }
+                if (lastParsed.equals("count")) {
+                    Operator operand = parseValue(10, null, false);
+                    checkOperand(operand);
+                    if (priority < 10) {
+                        ans = new Count<>(operand, operation);
+                    } else if (priority >= 10) {
+                        return new Count<>(operand, operation);
+                    }
+                }
+                if (lastParsed.equals("min")) {
+                    Operator secondOperand = parseValue(getWordPriority("min"), null, false);
+                    if (secondOperand == null) {
+                        throw new SecondOperandException(prevParsed, lastParsed,
+                                source.currentWord(), source.getPos());
+                    }
+                    Operator result = new Min<T>(ans, secondOperand, operation);
+
+                    if (priority < getWordPriority("min")) {
                         ans = result;
                     } else {
                         return result;
                     }
                 }
-                if (lastParsed.equals("//")) {
-                    Operator secondOperand = parseValue(getWordPriority("//"), null, false);
-                    checkSecondOperand(secondOperand);
-                    Operator result = new Log(ans, secondOperand);
-                    if (priority < getWordPriority("//")) {
+                if (lastParsed.equals("max")) {
+                    Operator secondOperand = parseValue(getWordPriority("max"), null, false);
+                    if (secondOperand == null) {
+                        throw new SecondOperandException(prevParsed, lastParsed,
+                                source.currentWord(), source.getPos());
+                    }
+                    Operator result = new Max<T>(ans, secondOperand, operation);
+
+                    if (priority < getWordPriority("max")) {
                         ans = result;
                     } else {
                         return result;
                     }
                 }
 
-                if (lastParsed.equals("<<")) {
-                    Operator secondOperand = parseValue(getWordPriority("<<"), null, false);
-                    checkSecondOperand(secondOperand);
-                    Operator result = new ShiftLeft(ans, secondOperand);
-                    if (priority < getWordPriority("<<")) {
-                        ans = result;
-                    } else {
-                        return result;
-                    }
-                }
-
-                if (lastParsed.equals(">>")) {
-                    Operator secondOperand = parseValue(getWordPriority(">>"), null, false);
-                    checkSecondOperand(secondOperand);
-                    Operator result = new ShiftRight(ans, secondOperand);
-                    if (priority < getWordPriority(">>")) {
-                        ans = result;
-                    } else {
-                        return result;
-                    }
-                }
-                if (lastParsed.equals("abs")) {
-                    Operator operand = parseValue(10, null, false);
-                    checkOperand(operand);
-                    if (priority < 10) {
-                        ans = new Abs(operand); // 10 is UnaryOperator priority
-
-                    } else if (priority >= 10) {
-                        return new Abs(operand);
-                    }
-                }
-                if (lastParsed.equals("log2")) {
-                    /*if (source.current() != '(' && source.current() != ' ') {
-                        throw new RuntimeException("No space between log2 and operand");
-                    }*/
-                    Operator operand = parseValue(10, null, false);
-                    checkOperand(operand);
-                    if (priority < 10) {
-                        ans = new Log2(operand); // 10 is UnaryOperator priority
-
-                    } else if (priority >= 10) {
-                        return new Log2(operand);
-                    }
-                }
-                if (lastParsed.equals("pow2")) {
-                    /*if (source.current() != '(' && source.current() != ' ') {
-                        throw new RuntimeException("No space between log2 and operand");
-                    }*/
-                    Operator operand = parseValue(10, null, false);
-                    checkOperand(operand);
-                    if (priority < 10) {
-                        ans = new Pow2(operand); // 10 is UnaryOperator priority
-
-                    } else if (priority >= 10) {
-                        return new Pow2(operand);
-                    }
-                }
-                if (lastParsed.equals("square")) {
-                    Operator operand = parseValue(10, null, false);
-                    checkOperand(operand);
-                    if (priority < 10) {
-                        ans = new Square(operand);
-                    } else if (priority >= 10) {
-                        return new Square(operand);
-                    }
-                }
                 if (lastParsed.equals("+")) {
-
                     Operator secondOperand = parseValue(getWordPriority("+"), null, false);
                     if (secondOperand == null) {
                         throw new SecondOperandException(prevParsed, lastParsed,
                                 source.currentWord(), source.getPos());
                     }
-                    Operator result = new CheckedAdd(ans, secondOperand);
+                    Operator result = new CheckedAdd<T>(ans, secondOperand, operation);
 
                     if (priority < getWordPriority("+")) {
                         ans = result;
@@ -266,13 +308,13 @@ public class ExpressionParser implements Parser {
                             throw new OperandException(lastParsed, source.currentWord(), source.getPos());
                         }
                         if (priority < 10) {
-                            ans = new CheckedNegate(res); // 10 is UnaryOperator priority
+                            ans = new CheckedNegate<T>(res, operation); // 10 is UnaryOperator priority
                             if (res instanceof Const) {
                                 if (((Const) res).isNegated()) {
                                     ((Const) res).deleteNegate();
                                     ans = res;
                                 } else {
-                                    ans = new Const(-res.evaluate(0));
+                                    ans = ((Const)res).negated();
                                 }
                             }
                         } else if (priority >= 10) {
@@ -281,10 +323,10 @@ public class ExpressionParser implements Parser {
                                     ((Const) res).deleteNegate();
                                     return res;
                                 } else {
-                                    return new Const(-res.evaluate(0));
+                                    return ((Const)res).negated();
                                 }
                             }
-                            return new CheckedNegate(res);
+                            return new CheckedNegate<T>(res, operation);
                         }
                     } else {
                         isLastBinaryOperator = true;
@@ -293,7 +335,7 @@ public class ExpressionParser implements Parser {
                             throw new SecondOperandException(prevParsed, lastParsed,
                                     source.currentWord(), source.getPos());
                         }
-                        Operator result = new CheckedSubtract(ans, secondOperand);
+                        Operator result = new CheckedSubtract<T>(ans, secondOperand, operation);
                         if (priority < getWordPriority("-")) {
                             ans = result;
                         } else {
@@ -304,7 +346,7 @@ public class ExpressionParser implements Parser {
                 if (lastParsed.equals("*")) {
                     Operator secondOperand = parseValue(getWordPriority("*"), null, false);
                     checkSecondOperand(secondOperand);
-                    Operator result = new CheckedMultiply(ans, secondOperand);
+                    Operator result = new CheckedMultiply<T>(ans, secondOperand, operation);
 
                     if (priority < getWordPriority("*")) {
                         ans = result;
@@ -315,7 +357,7 @@ public class ExpressionParser implements Parser {
                 if (lastParsed.equals("/")) {
                     Operator secondOperand = parseValue(getWordPriority("/"), null, false);
                     checkSecondOperand(secondOperand);
-                    Operator result = new CheckedDivide(ans, secondOperand);
+                    Operator result = new CheckedDivide(ans, secondOperand, operation);
                     if (priority < getWordPriority("/")) {
                         ans = result;
                     } else {
@@ -364,18 +406,27 @@ public class ExpressionParser implements Parser {
 //    }
     private int getWordPriority(String word) {
         if (word.equals("+")) {
-            return new CheckedAdd(null, null).getPriority();
+            return new CheckedAdd(null, null, operation).getPriority();
         }
         if (word.equals("-")) {
-            return new CheckedSubtract(null, null).getPriority();
+            return new CheckedSubtract(null, null, operation).getPriority();
         }
         if (word.equals("*")) {
-            return new CheckedMultiply(null, null).getPriority();
+            return new CheckedMultiply(null, null, operation).getPriority();
         }
         if (word.equals("/")) {
-            return new CheckedDivide(null, null).getPriority();
+            return new CheckedDivide(null, null, operation).getPriority();
         }
-        if (word.equals(">>")) {
+        if (word.equals("min")) {
+            return new Min(null, null, operation).getPriority();
+        }
+        if (word.equals("max")) {
+            return new Max(null, null, operation).getPriority();
+        }
+        if (word.equals("count")) {
+            return new Count(null, operation).getPriority();
+        }
+        /*if (word.equals(">>")) {
             return new ShiftRight(null, null).getPriority();
         }
         if (word.equals("<<")) {
@@ -392,7 +443,7 @@ public class ExpressionParser implements Parser {
         }
         if (word.equals("**")) {
             return 7;
-        }
+        } */
         if (word.equals(")")) {
             return 10;
         }
@@ -441,14 +492,22 @@ public class ExpressionParser implements Parser {
             case "-":
             case "*":
             case "/":
-            case ">>":
+            /*case ">>":
             case "<<":
             case "pow2":
             case "log2":
             case "//":
-            case "**":
+            case "**":*/
                 return true;
         }
         return false;
+    }
+
+    private void defaultCondition() {
+        depth = 0;
+        boolean isLastBinaryOperator = false;
+        String lastParsed = "";
+        String prevParsed = "begin";
+        boolean currentOperationParsed = false;
     }
 }

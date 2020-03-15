@@ -1,27 +1,17 @@
 package expression;
 
-import expression.exceptions.OverflowException;
+import expression.generic.Operation;
 
-import java.util.Map;
+public class CheckedNegate<T> extends UnaryOperator<T> {
 
-public class CheckedNegate extends UnaryOperator {
-
-    public CheckedNegate(Operator operator) {
-        super(operator);
-    }
-
-    protected int doOperation(int result) {
-        if (result == Integer.MIN_VALUE) {
-            throw new OverflowException("-", result + "");
-        }
-        return -result;
+    public CheckedNegate(Operator operator, Operation<T> operation) {
+        super(operator, operation);
     }
 
     @Override
-    public double evaluate(double x) {
-        return -operand.evaluate(x);
+    protected T doOperation(T result) {
+        return operation.negate(result);
     }
-
 
     @Override
     public void toString(StringBuilder sb) {

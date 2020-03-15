@@ -1,23 +1,25 @@
 package expression;
 
+import expression.generic.Operation;
+
 import java.util.Map;
 import java.util.TreeMap;
 
-public abstract class Operator implements Expression, DoubleExpression, CommonExpression {
-    public abstract int evaluate(Map<String, Integer> values);
-    public int evaluate(int x) {
-        return evaluate(x, -1, -1);
+public abstract class Operator<T> implements TripleExpression<T> {
+    protected Operation<T> operation;
+
+    public abstract T evaluate(Map<String, T> values);
+    public T evaluate(T x) {
+        return evaluate(x, null, null);
     }
 
-    public int evaluate(int x, int y, int z) {
-        Map<String, Integer> map = new TreeMap<>();
+    public T evaluate(T x, T y, T z) {
+        Map<String, T> map = new TreeMap<>();
         map.put("x", x);
         map.put("y", y);
         map.put("z", z);
-        // System.out.println(x + " " + y + " " + z);
         return evaluate(map);
     }
-    public abstract double evaluate(double x);
     public abstract int getPriority();
     public boolean equals(Object obj) {
         if (obj instanceof Operator) {

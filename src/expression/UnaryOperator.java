@@ -1,18 +1,22 @@
 package expression;
 
+import expression.generic.Operation;
+
 import java.util.Map;
 
-public abstract class UnaryOperator extends Operator{
-    protected Operator operand;
+public abstract class UnaryOperator<T> extends Operator<T> {
+    protected Operator<T> operand;
 
-    public UnaryOperator (Operator operator) {
+    public UnaryOperator (Operator operator, Operation<T> operation) {
         this.operand = operator;
+        this.operation = operation;
     }
-    public final int evaluate(Map<String, Integer> values) {
-        int val = operand.evaluate(values);
+    @Override
+    public final T evaluate(Map<String, T> values) {
+        T val = operand.evaluate(values);
         return doOperation(val);
     }
-    protected abstract int doOperation(int val);
+    protected abstract T doOperation(T val);
 
     @Override
     public int getPriority() {

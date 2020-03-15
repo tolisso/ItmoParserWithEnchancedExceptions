@@ -74,6 +74,15 @@ public class Source {
                 current = "abs";
             }
             return current;
+        } else if (current() == 'm') {
+            if (isWord("min")) {
+                check("min");
+                current = "min";
+            } else {
+                check("max");
+                current = "max";
+            }
+            return current;
         }  else if (current() == 'v') {
             check("value");
             current = "value";
@@ -81,6 +90,10 @@ public class Source {
         } else if (current() == 's') {
             check("square");
             current = "square";
+            return current;
+        } else if (current() == 'c') {
+            check("count");
+            current = "count";
             return current;
         } else if (current() == '+') {
             check("+");
